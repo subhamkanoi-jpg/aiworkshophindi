@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,19 +26,33 @@ import {
   Menu,
   X,
   Linkedin,
+  Languages,
 
 } from "lucide-react";
+import { translations, type Lang } from "./translations";
 
 function App() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [lang, setLang] = useState<Lang>(() => {
+    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("lang") : null;
+    return saved === "en" || saved === "hi" ? saved : "hi";
+  });
+
+  const t = translations[lang];
+
+  useEffect(() => {
+    if (typeof localStorage !== "undefined") localStorage.setItem("lang", lang);
+    document.documentElement.lang = lang === "hi" ? "hi-Latn" : "en";
+    document.title = t.meta.title;
+  }, [lang, t.meta.title]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email) return;
-    const message = `Hi! Main 28 June 2026 ko The AI Workshop ke liye register karna chahta/chahti hoon.%0A%0A*Naam:* ${encodeURIComponent(name)}%0A*Email:* ${encodeURIComponent(email)}`;
+    const message = `${encodeURIComponent(t.wa.intro)}%0A%0A*${encodeURIComponent(t.wa.nameLabel)}:* ${encodeURIComponent(name)}%0A*${encodeURIComponent(t.wa.emailLabel)}:* ${encodeURIComponent(email)}`;
     window.open(`https://wa.me/919830715557?text=${message}`, "_blank");
     setSubmitted(true);
   };
@@ -48,44 +62,56 @@ function App() {
     setMobileMenuOpen(false);
   };
 
-  const workshopTopics = [
-    {
-      icon: <Globe className="h-6 w-6" />,
-      title: "Domain Kharidna",
-      desc: "Apne brand ya business ke liye perfect domain name choose karna aur kharidna seekhiye.",
-    },
-    {
-      icon: <Palette className="h-6 w-6" />,
-      title: "Vibe Coding se Website Banana",
-      desc: "AI-powered vibe coding se ek beautiful website design kijiye — traditional coding ki koi zaroorat nahi.",
-    },
-    {
-      icon: <Server className="h-6 w-6" />,
-      title: "Vercel par Free Hosting",
-      desc: "Apni website Vercel ke powerful platform se internet par bilkul free mein deploy kijiye.",
-    },
-    {
-      icon: <Rocket className="h-6 w-6" />,
-      title: "Going Live",
-      desc: "Apna domain connect kijiye, deploy dabaiye, aur dekhiye apni site puri duniya ke liye live hote hue.",
-    },
+  const topicIcons = [
+    <Globe className="h-6 w-6" />,
+    <Palette className="h-6 w-6" />,
+    <Server className="h-6 w-6" />,
+    <Rocket className="h-6 w-6" />,
+  ];
+  const workshopTopics = t.workshop.topics.map((topic, i) => ({
+    icon: topicIcons[i],
+    ...topic,
+  }));
+
+  const aboutIcons = [
+    <Users className="h-8 w-8" />,
+    <Sparkles className="h-8 w-8" />,
+    <MapPin className="h-8 w-8" />,
+  ];
+  const aboutCards = t.about.cards.map((card, i) => ({ icon: aboutIcons[i], ...card }));
+
+  const detailIcons = [
+    <Calendar className="h-5 w-5 text-primary flex-shrink-0" />,
+    <Clock className="h-5 w-5 text-primary flex-shrink-0" />,
+    <MapPin className="h-5 w-5 text-primary flex-shrink-0" />,
+    <Users className="h-5 w-5 text-primary flex-shrink-0" />,
   ];
 
-  const whoIsThisFor = [
-    "Chhote business owners jo online presence banana chahte hain",
-    "Freelancers jo apna portfolio bana rahe hain",
-    "Students jo AI aur web tech explore kar rahe hain",
-    "Creatives & artists jo apna kaam showcase karna chahte hain",
-    "Koi bhi jise AI ke baare mein curiosity hai — tech background ki zaroorat nahi",
-  ];
+  const teamMembers = [
+    { name: "Subham Kanoi", img: "/subham.png", linkedin: "https://www.linkedin.com/in/subhamkanoi/" },
+    { name: "Yogesh Kanoi", img: "/yogesh.png", linkedin: "https://www.linkedin.com/in/yogesh-kanoi-37219a63/" },
+    { name: "Neeraj Kanoi", img: "/neeraj.png", linkedin: "https://www.linkedin.com/in/neeraj-kanoi-marketing/" },
+  ].map((m, i) => ({ ...m, ...t.team.members[i] }));
 
-  const whatYouGet = [
-    "Hands-on, instructor-led workshop",
-    "Khud banayi hui live website ke saath ghar jaayein",
-    "Printed cheat sheets & resources",
-    "Workshop ke baad WhatsApp support group",
-    "Certificate of completion",
-  ];
+  const LangToggle = ({ className = "" }: { className?: string }) => (
+    <div className={`inline-flex items-center rounded-full border border-border bg-background p-0.5 ${className}`}>
+      <Languages className="h-4 w-4 text-muted-foreground mx-1.5" />
+      {(["en", "hi"] as Lang[]).map((l) => (
+        <button
+          key={l}
+          onClick={() => setLang(l)}
+          aria-pressed={lang === l}
+          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+            lang === l
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {translations[l].langName}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,31 +127,35 @@ function App() {
             </button>
 
             <div className="hidden md:flex items-center gap-8">
-              <button onClick={() => scrollTo("about")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Humare Baare Mein</button>
-              <button onClick={() => scrollTo("workshop")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Workshop</button>
-              <button onClick={() => scrollTo("team")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Hosts se Miliye</button>
-              <button onClick={() => scrollTo("faq")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">FAQ</button>
+              <button onClick={() => scrollTo("about")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{t.nav.about}</button>
+              <button onClick={() => scrollTo("workshop")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{t.nav.workshop}</button>
+              <button onClick={() => scrollTo("team")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{t.nav.team}</button>
+              <button onClick={() => scrollTo("faq")} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{t.nav.faq}</button>
+              <LangToggle />
               <Button onClick={() => scrollTo("register")} size="sm">
-                Humare Saath Seekhiye <ArrowRight className="ml-1 h-4 w-4" />
+                {t.nav.cta} <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
 
-            <button
-              className="md:hidden text-foreground"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+            <div className="flex items-center gap-3 md:hidden">
+              <LangToggle />
+              <button
+                className="text-foreground"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
           </div>
 
           {mobileMenuOpen && (
             <div className="md:hidden pb-4 space-y-3">
-              <button onClick={() => scrollTo("about")} className="block w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground py-2">Humare Baare Mein</button>
-              <button onClick={() => scrollTo("workshop")} className="block w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground py-2">Workshop</button>
-              <button onClick={() => scrollTo("team")} className="block w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground py-2">Hosts se Miliye</button>
-              <button onClick={() => scrollTo("faq")} className="block w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground py-2">FAQ</button>
+              <button onClick={() => scrollTo("about")} className="block w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t.nav.about}</button>
+              <button onClick={() => scrollTo("workshop")} className="block w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t.nav.workshop}</button>
+              <button onClick={() => scrollTo("team")} className="block w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t.nav.team}</button>
+              <button onClick={() => scrollTo("faq")} className="block w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t.nav.faq}</button>
               <Button onClick={() => scrollTo("register")} size="sm" className="w-full">
-                Humare Saath Seekhiye <ArrowRight className="ml-1 h-4 w-4" />
+                {t.nav.cta} <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
           )}
@@ -142,43 +172,43 @@ function App() {
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-8">
               <MapPin className="h-4 w-4" />
-              Kolkata mein Offline Workshop
+              {t.hero.badge}
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1]">
-              AI hai{" "}
+              {t.hero.titlePre}{" "}
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Sabke Liye
+                {t.hero.titleHighlight}
               </span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              Humara maanna hai ki AI ki samajh sirf engineers aur coders tak simit nahi rehni chahiye —
-              yeh har kisi ka haq hai. Isi soch ke saath hum Kolkata mein hands-on workshops karte hain,
-              khaas un logon ke liye jinka <strong className="text-foreground">koi technical background nahi</strong> hai.
+              {t.hero.subtitlePre}
+              <strong className="text-foreground">{t.hero.subtitleBold}</strong>
+              {t.hero.subtitlePost}
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" onClick={() => scrollTo("register")} className="text-base px-8 py-6">
-                Workshop ke liye Register Karein <ArrowRight className="ml-2 h-5 w-5" />
+                {t.hero.ctaRegister} <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button size="lg" variant="outline" onClick={() => scrollTo("workshop")} className="text-base px-8 py-6">
-                Dekhiye Aap Kya Seekhenge
+                {t.hero.ctaLearn}
               </Button>
             </div>
 
             <div className="mt-12 flex items-center justify-center gap-8 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />
-                <span>28 June 2026</span>
+                <span>{t.hero.date}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary" />
-                <span>3 Ghante</span>
+                <span>{t.hero.duration}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
-                <span>Batch Size: 20</span>
+                <span>{t.hero.batch}</span>
               </div>
             </div>
           </div>
@@ -190,33 +220,15 @@ function App() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-              AI ko Sabke Liye Accessible Banana
+              {t.about.heading}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Hum koi badi edtech company nahi hain. Hum Kolkata ke log hain, ek simple si soch ke saath:
-              AI ki samajh sirf tech walon tak nahi rukni chahiye. Apne level par, ek-ek workshop karke,
-              hum yahi badlav laane ki koshish kar rahe hain.
+              {t.about.subtitle}
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <Users className="h-8 w-8" />,
-                title: "Non-Techies ke Liye",
-                desc: "Koi coding prerequisite nahi. Agar aap WhatsApp use kar sakte hain, toh yeh bhi seekh sakte hain.",
-              },
-              {
-                icon: <Sparkles className="h-8 w-8" />,
-                title: "Karke Seekhiye",
-                desc: "Har workshop hands-on hai. Aap kuch real banakar hi ghar jaate hain.",
-              },
-              {
-                icon: <MapPin className="h-8 w-8" />,
-                title: "Offline & In-Person",
-                desc: "Real human connection. Aise instructors ke saath face-to-face seekhiye jo genuinely care karte hain.",
-              },
-            ].map((item, i) => (
+            {aboutCards.map((item, i) => (
               <Card key={i} className="group relative overflow-hidden border-border/50 hover:border-primary/30 transition-colors">
                 <CardContent className="pt-8 pb-6 px-6">
                   <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -235,7 +247,7 @@ function App() {
       <section className="py-16 border-y border-border bg-muted/20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm font-medium text-muted-foreground mb-10 tracking-wide uppercase">
-            AI Tools jin par hum Trust karte hain & Sikhate hain
+            {t.tools.heading}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
             {/* ChatGPT */}
@@ -311,13 +323,13 @@ function App() {
           <div className="text-center max-w-2xl mx-auto mb-16">
             <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent mb-4">
               <Rocket className="h-4 w-4" />
-              Workshop #1
+              {t.workshop.badge}
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-              Apni Website Banayein & Host Karein
+              {t.workshop.heading}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Zero se internet par live website tak — sirf 3 ghante mein. Koi coding experience ki zaroorat nahi.
+              {t.workshop.subtitle}
             </p>
           </div>
 
@@ -326,7 +338,7 @@ function App() {
             <CardContent className="p-0">
               <div className="grid md:grid-cols-2">
                 <div className="p-8 sm:p-10">
-                  <h3 className="text-2xl font-bold text-foreground mb-6">Aap Kya Seekhenge</h3>
+                  <h3 className="text-2xl font-bold text-foreground mb-6">{t.workshop.learnHeading}</h3>
                   <div className="space-y-6">
                     {workshopTopics.map((topic, i) => (
                       <div key={i} className="flex gap-4">
@@ -343,40 +355,21 @@ function App() {
                 </div>
                 <div className="bg-primary/5 p-8 sm:p-10 flex flex-col justify-between">
                   <div>
-                    <h3 className="text-2xl font-bold text-foreground mb-6">Workshop Details</h3>
+                    <h3 className="text-2xl font-bold text-foreground mb-6">{t.workshop.detailsHeading}</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-primary flex-shrink-0" />
-                        <div>
-                          <p className="font-medium text-foreground">Sunday, 28 June 2026</p>
-                          <p className="text-sm text-muted-foreground">Subah ka session</p>
+                      {t.workshop.details.map((detail, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          {detailIcons[i]}
+                          <div>
+                            <p className="font-medium text-foreground">{detail.title}</p>
+                            <p className="text-sm text-muted-foreground">{detail.sub}</p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-primary flex-shrink-0" />
-                        <div>
-                          <p className="font-medium text-foreground">3 Ghante</p>
-                          <p className="text-sm text-muted-foreground">Hands-on training</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
-                        <div>
-                          <p className="font-medium text-foreground">Kolkata</p>
-                          <p className="text-sm text-muted-foreground">Venue details registration par milengi</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Users className="h-5 w-5 text-primary flex-shrink-0" />
-                        <div>
-                          <p className="font-medium text-foreground">Batch Size: 20</p>
-                          <p className="text-sm text-muted-foreground">Hum jaan-bujhkar sirf 20 logon ka batch rakhte hain, taaki har insaan par poora dhyaan de sakein</p>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
                   <Button onClick={() => scrollTo("register")} className="mt-8 w-full" size="lg">
-                    Register Karein <ArrowRight className="ml-2 h-5 w-5" />
+                    {t.workshop.registerNow} <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </div>
               </div>
@@ -387,9 +380,9 @@ function App() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardContent className="pt-8 pb-6 px-6">
-                <h3 className="text-xl font-bold text-foreground mb-6">Yeh Kiske Liye Hai?</h3>
+                <h3 className="text-xl font-bold text-foreground mb-6">{t.workshop.whoHeading}</h3>
                 <ul className="space-y-3">
-                  {whoIsThisFor.map((item, i) => (
+                  {t.workshop.whoList.map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                       <span className="text-muted-foreground">{item}</span>
@@ -400,9 +393,9 @@ function App() {
             </Card>
             <Card>
               <CardContent className="pt-8 pb-6 px-6">
-                <h3 className="text-xl font-bold text-foreground mb-6">Aapko Kya Milega</h3>
+                <h3 className="text-xl font-bold text-foreground mb-6">{t.workshop.getHeading}</h3>
                 <ul className="space-y-3">
-                  {whatYouGet.map((item, i) => (
+                  {t.workshop.getList.map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <BadgeCheck className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-muted-foreground">{item}</span>
@@ -420,94 +413,41 @@ function App() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-              Apne Workshop Hosts se Miliye
+              {t.team.heading}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Teen bhai jinka maanna hai ki AI sabke liye hona chahiye — sirf engineers ke liye nahi.
+              {t.team.subtitle}
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Subham */}
-            <Card className="group relative overflow-hidden border-border/50 hover:border-primary/30 transition-colors">
-              <div className="w-full aspect-square overflow-hidden bg-muted">
-                <img
-                  src="/subham.png"
-                  alt="Subham Kanoi"
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="pt-5 pb-6 px-6 text-center">
-                <h3 className="text-xl font-semibold text-foreground">Subham Kanoi</h3>
-                <p className="text-sm font-medium text-primary mt-1">The Instigator</p>
-                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
-                  Xavier's grad aur Urban Rasoi ke founder — Kolkata ka apna cloud kitchen for gourmet house parties aur B2B corporate catering. Woh non-techie jisne pure FOMO ke chalte yeh sab shuru kiya. Agar The AI Workshop ka koi pehla beta tester hai, toh woh yahi hain.
-                </p>
-                <a
-                  href="https://www.linkedin.com/in/subhamkanoi/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <Linkedin className="h-4 w-4" />
-                  LinkedIn
-                </a>
-              </CardContent>
-            </Card>
-
-            {/* Yogesh */}
-            <Card className="group relative overflow-hidden border-border/50 hover:border-primary/30 transition-colors">
-              <div className="w-full aspect-square overflow-hidden bg-muted">
-                <img
-                  src="/yogesh.png"
-                  alt="Yogesh Kanoi"
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="pt-5 pb-6 px-6 text-center">
-                <h3 className="text-xl font-semibold text-foreground">Yogesh Kanoi</h3>
-                <p className="text-sm font-medium text-primary mt-1">The Backbone</p>
-                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
-                  LTI mein AI/ML engineer, 2020 se deep learning ka half-decade ka experience. Woh architect hain — jo "kya hum yeh kar sakte hain?" ko ek working system mein badal dete hain. Har workshop ka blueprint pehle unhi se hokar guzarta hai.
-                </p>
-                <a
-                  href="https://www.linkedin.com/in/yogesh-kanoi-37219a63/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <Linkedin className="h-4 w-4" />
-                  LinkedIn
-                </a>
-              </CardContent>
-            </Card>
-
-            {/* Neeraj */}
-            <Card className="group relative overflow-hidden border-border/50 hover:border-primary/30 transition-colors">
-              <div className="w-full aspect-square overflow-hidden bg-muted">
-                <img
-                  src="/neeraj.png"
-                  alt="Neeraj Kanoi"
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="pt-5 pb-6 px-6 text-center">
-                <h3 className="text-xl font-semibold text-foreground">Neeraj Kanoi</h3>
-                <p className="text-sm font-medium text-primary mt-1">The Growth Guy</p>
-                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
-                  Bangalore ka techie jisne safe IT job chhodkar Wokelo AI naam ke AI startup mein Growth Lead ka role choose kiya. Woh jaante hain ki zero se scale tak jaane mein kya lagta hai — aur wahi energy yahan la rahe hain.
-                </p>
-                <a
-                  href="https://www.linkedin.com/in/neeraj-kanoi-marketing/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <Linkedin className="h-4 w-4" />
-                  LinkedIn
-                </a>
-              </CardContent>
-            </Card>
+            {teamMembers.map((member, i) => (
+              <Card key={i} className="group relative overflow-hidden border-border/50 hover:border-primary/30 transition-colors">
+                <div className="w-full aspect-square overflow-hidden bg-muted">
+                  <img
+                    src={member.img}
+                    alt={member.name}
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <CardContent className="pt-5 pb-6 px-6 text-center">
+                  <h3 className="text-xl font-semibold text-foreground">{member.name}</h3>
+                  <p className="text-sm font-medium text-primary mt-1">{member.role}</p>
+                  <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+                    {member.bio}
+                  </p>
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Linkedin className="h-4 w-4" />
+                    LinkedIn
+                  </a>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -517,76 +457,24 @@ function App() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-              Frequently Asked Questions
+              {t.faq.heading}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Sawaal hain? Humare paas jawaab hain.
+              {t.faq.subtitle}
             </p>
           </div>
 
           <Accordion type="single" collapsible className="space-y-3">
-            <AccordionItem value="q1" className="border rounded-lg px-6 bg-background">
-              <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline">
-                Kya mujhe coding experience chahiye?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4">
-                Bilkul nahi. Yeh workshop shuruaat se hi un logon ke liye banayi gayi hai jinka zero technical background hai. Agar aap browser use kar sakte hain aur type kar sakte hain, toh aap humare saath website bana sakte hain. Yahi toh poori baat hai.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="q2" className="border rounded-lg px-6 bg-background">
-              <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline">
-                Mujhe kya laana hoga?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4">
-                Bas apna laptop aur seekhne ki willingness. Baaki sab kuch hum guide karenge — free tools set up karne se lekar aapki site deploy karne tak. Pehle se koi software install karne ki zaroorat nahi.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="q3" className="border rounded-lg px-6 bg-background">
-              <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline">
-                Kya workshop ke end tak meri website sach mein live hogi?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4">
-                Haan! 3 ghante poore hone tak aapki khud banayi hui real website internet par live hogi. Aap kuch tangible lekar jaayenge — sirf theory nahi.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="q4" className="border rounded-lg px-6 bg-background">
-              <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline">
-                Kya hosting sach mein free hai?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4">
-                Haan. Hum aapko Vercel ke free tier par deploy karna sikhayenge, jo personal sites, portfolios aur small business pages ke liye more than enough hai. Koi hidden costs nahi.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="q5" className="border rounded-lg px-6 bg-background">
-              <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline">
-                Workshop ke baad help chahiye ho toh?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4">
-                Aapko humare post-workshop WhatsApp support group ka access milega, jahan aap kabhi bhi sawaal pooch sakte hain. Hum ek community bana rahe hain, sirf ek one-off event nahi.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="q6" className="border rounded-lg px-6 bg-background">
-              <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline">
-                Kolkata mein workshop kahan hogi?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4">
-                Venue details registered participants ke saath date ke kareeb share ki jayengi. Rest assured, yeh Kolkata ki ek comfortable, well-connected location hogi.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="q7" className="border rounded-lg px-6 bg-background">
-              <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline">
-                Kya iske baad aur workshops hongi?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4">
-                Haan, yeh humare liye ek lambi journey ki pehli seedhi hai. Hum alag-alag AI topics par workshops ki series plan kar rahe hain — sab non-technical logon ke liye. Yeh humara long-term mission hai, ek one-off event nahi. Jo log judte hain, unke saath hum aage bhi seekhte-sikhate rahenge.
-              </AccordionContent>
-            </AccordionItem>
+            {t.faq.items.map((item, i) => (
+              <AccordionItem key={i} value={`q${i + 1}`} className="border rounded-lg px-6 bg-background">
+                <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline">
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-4">
+                  {item.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
           </Accordion>
         </div>
       </section>
@@ -599,8 +487,8 @@ function App() {
               <MessageCircle className="h-6 w-6" />
             </div>
             <div className="text-center sm:text-left">
-              <h3 className="text-lg font-semibold text-foreground">Humari WhatsApp Community Join Kijiye</h3>
-              <p className="text-sm text-muted-foreground">Workshops, tips aur AI ki kaam ki baatein. Koi shor nahi — bas ek dusre se seekhne wali community.</p>
+              <h3 className="text-lg font-semibold text-foreground">{t.community.heading}</h3>
+              <p className="text-sm text-muted-foreground">{t.community.desc}</p>
             </div>
             <a
               href="https://chat.whatsapp.com/DNIePdAGNfL2cs1LDIs0DG"
@@ -608,7 +496,7 @@ function App() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-sm font-semibold text-white hover:bg-[#1ebe57] transition-colors"
             >
-              Join Karein <ArrowRight className="h-4 w-4" />
+              {t.community.cta} <ArrowRight className="h-4 w-4" />
             </a>
           </div>
         </div>
@@ -619,11 +507,10 @@ function App() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-              Humare Saath Seekhne Aaiye
+              {t.register.heading}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Hum batch jaan-bujhkar chhota rakhte hain, taaki har seekhne wale ko poora dhyaan mil sake.
-              Aap aana chahte hain, toh bas apna naam bhej dijiye — baaki hum sambhal lenge.
+              {t.register.subtitle}
             </p>
 
             <Card className="mt-10">
@@ -633,17 +520,17 @@ function App() {
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 text-accent">
                       <CheckCircle2 className="h-8 w-8" />
                     </div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">Bas Ek Step Baaki!</h3>
+                    <h3 className="text-xl font-bold text-foreground mb-2">{t.register.submittedHeading}</h3>
                     <p className="text-muted-foreground">
-                      Aapki details ke saath ek WhatsApp chat khul gayi hai. Bas send dabaiye — hum aapki seat confirm kar denge!
+                      {t.register.submittedDesc}
                     </p>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2 text-left">
-                      <label className="text-sm font-medium text-foreground">Poora Naam</label>
+                      <label className="text-sm font-medium text-foreground">{t.register.nameLabel}</label>
                       <Input
-                        placeholder="Apna naam likhiye"
+                        placeholder={t.register.namePlaceholder}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
@@ -651,10 +538,10 @@ function App() {
                       />
                     </div>
                     <div className="space-y-2 text-left">
-                      <label className="text-sm font-medium text-foreground">Email Address</label>
+                      <label className="text-sm font-medium text-foreground">{t.register.emailLabel}</label>
                       <Input
                         type="email"
-                        placeholder="you@example.com"
+                        placeholder={t.register.emailPlaceholder}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -662,10 +549,10 @@ function App() {
                       />
                     </div>
                     <Button type="submit" size="lg" className="w-full mt-2">
-                      Workshop ke liye Register Karein <ArrowRight className="ml-2 h-5 w-5" />
+                      {t.register.submitBtn} <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Register karne par aapko workshop updates milenge. Spam kabhi nahi.
+                      {t.register.disclaimer}
                     </p>
                   </form>
                 )}
@@ -700,7 +587,7 @@ function App() {
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-[#25D366] hover:underline"
               >
                 <MessageCircle className="h-4 w-4" />
-                Community
+                {t.footer.community}
               </a>
             </div>
           </div>
@@ -713,7 +600,7 @@ function App() {
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:bg-[#1ebe57] hover:scale-110 transition-all duration-200"
-        aria-label="WhatsApp Community Join Kijiye"
+        aria-label={t.wa.aria}
       >
         <svg viewBox="0 0 32 32" className="h-7 w-7" fill="currentColor">
           <path d="M16.004 0h-.008C7.174 0 0 7.176 0 16c0 3.5 1.132 6.744 3.054 9.378L1.056 31.17l5.998-1.924C9.592 30.924 12.66 32 16.004 32 24.826 32 32 24.822 32 16S24.826 0 16.004 0zm9.314 22.61c-.39 1.1-1.932 2.014-3.168 2.28-.844.18-1.948.324-5.662-1.216-4.754-1.97-7.814-6.788-8.054-7.104-.232-.316-1.932-2.574-1.932-4.908s1.222-3.482 1.654-3.956c.432-.474.944-.592 1.26-.592.316 0 .632.004.908.016.292.014.684-.112 1.068.816.39.94 1.33 3.248 1.448 3.482.118.236.196.512.04.828-.158.316-.236.512-.472.79-.236.276-.498.618-.71.828-.236.236-.482.49-.206.962.276.474 1.226 2.024 2.632 3.278 1.81 1.612 3.336 2.112 3.81 2.35.474.236.75.196 1.028-.118.276-.316 1.186-1.382 1.502-1.856.316-.474.632-.394 1.068-.236.434.158 2.754 1.3 3.228 1.536.474.236.79.354.908.55.118.196.118 1.126-.272 2.226z"/>
